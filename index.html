@@ -193,9 +193,19 @@
     display:inline-flex; align-items:center; gap:8px;
     border:1.5px solid var(--ink);
     transition: transform .18s ease, background .18s ease, color .18s ease;
+    /* Reset khusus untuk elemen <button> (browser mobile tidak otomatis
+       mewarisi font/color ke button seperti ke <a>, bisa bikin teks "hilang") */
+    font-family:inherit;
+    color:inherit;
+    appearance:none;
+    -webkit-appearance:none;
+    background:none;
+    cursor:pointer;
+    line-height:1.2;
   }
   .btn-primary{ background:var(--ink); color:var(--paper); }
   .btn-primary:hover{ transform:translateY(-2px); background:var(--signal); border-color:var(--signal); }
+  .btn-ghost{ color:var(--ink); }
   .btn-ghost:hover{ transform:translateY(-2px); background:var(--ink); color:var(--paper); }
 
   /* right column wrapper — nudged down to align its top edge with the hero title, not the eyebrow tag */
@@ -654,7 +664,8 @@
     h1.hero-title{ font-size:clamp(34px, 11vw, 48px); line-height:1; }
     .hero-sub{ font-size:15px; margin-top:14px; }
     .hero-actions{ margin-top:22px; gap:10px; }
-    .btn{ padding:13px 20px; font-size:13px; flex:1; justify-content:center; }
+    .hero-actions .btn{ padding:13px 20px; font-size:13px; flex:1; justify-content:center; }
+    .load-more-row .btn{ padding:13px 20px; font-size:13px; }
     .hero-panel{ max-width:100%; }
 
     /* calmer, more spacious widget stack */
