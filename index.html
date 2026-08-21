@@ -435,6 +435,17 @@
     flex-wrap:wrap;
     gap:24px;
   }
+  .load-more-row{
+    display:flex;
+    justify-content:center;
+    margin-top:32px;
+  }
+  .load-more-row .btn{
+    background:transparent;
+    cursor:pointer;
+    font-family:'Space Mono', monospace;
+  }
+  .load-more-row.hidden{ display:none; }
   .video-card{
     border:1.5px solid var(--ink);
     border-radius:16px;
@@ -859,6 +870,9 @@
 
       <div class="video-grid" id="videoGrid"></div>
       <div class="works-state" id="worksState">Memuat karya…</div>
+      <div class="load-more-row">
+        <button class="btn btn-ghost" id="loadMoreBtn" type="button">Lihat Selengkapnya</button>
+      </div>
     </div>
   </section>
 
@@ -977,12 +991,17 @@
   const filterBtns = document.querySelectorAll('.filter-btn');
   const handledGrid = document.getElementById('handledGrid');
   const handledStateEl = document.getElementById('handledState');
+  const loadMoreRow = document.querySelector('.load-more-row');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+  const PAGE_SIZE = 6; // ~2 baris x 3 kolom di layar desktop
 
   let videos = [];
   let handled = [];
   let currentFilter = 'all';
   let loadFailed = false;
   let handledLoadFailed = false;
+  let visibleCount = PAGE_SIZE;
 
   function formatCount(n){
     n = Number(n);
@@ -1050,17 +1069,25 @@
 
   function render(){
     grid.innerHTML = '';
-    const list = videos.filter(v => currentFilter === 'all' || v.type === currentFilter);
+    const fullList = videos.filter(v => currentFilter === 'all' || v.type === currentFilter);
 
     if (loadFailed){
       setState('Gagal memuat karya dari database. Coba muat ulang halaman.', true);
+      if (loadMoreRow) loadMoreRow.classList.add('hidden');
       return;
     }
-    if (list.length === 0){
+    if (fullList.length === 0){
       setState('Belum ada video pada kategori ini.', false);
+      if (loadMoreRow) loadMoreRow.classList.add('hidden');
       return;
     }
     setState('', false);
+
+    const list = fullList.slice(0, visibleCount);
+
+    if (loadMoreRow){
+      loadMoreRow.classList.toggle('hidden', visibleCount >= fullList.length);
+    }
 
     list.forEach(v => {
       const card = document.createElement('div');
@@ -1108,6 +1135,7 @@
   async function loadFromBackend(){
     setState('Memuat karya…', false);
     setHandledState('Memuat akun…', false);
+    visibleCount = PAGE_SIZE;
 
     try {
       const { data, error } = await supabaseClient
@@ -1148,9 +1176,17 @@
       filterBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
+      visibleCount = PAGE_SIZE;
       render();
     });
   });
+
+  if (loadMoreBtn){
+    loadMoreBtn.addEventListener('click', () => {
+      visibleCount += PAGE_SIZE;
+      render();
+    });
+  }
 
   loadFromBackend();
 })();
