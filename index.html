@@ -207,6 +207,7 @@
   }
 
   /* ===== TIMELINE WIDGET — V1 (cutting footage) ===== */
+  .premiere-widget:not(.in-view) *{ animation-play-state: paused !important; }
   .premiere-widget{
     border:1.5px solid var(--ink);
     border-radius:16px;
@@ -247,11 +248,12 @@
     left:56%; width:44%;
     background:linear-gradient(135deg, var(--rec), #ff8b81);
     animation: clip-b-snap 3.2s ease-in-out infinite;
+    will-change: transform;
   }
   @keyframes clip-b-snap{
-    0%, 26%{ left:56%; }
-    30%{ left:59%; }
-    36%, 100%{ left:56%; }
+    0%, 26%{ transform:translateX(0); }
+    30%{ transform:translateX(6.8%); }
+    36%, 100%{ transform:translateX(0); }
   }
   .track .clip-wave{
     position:absolute; inset:0;
@@ -275,17 +277,17 @@
     100%{ left:100%; }
   }
   .track .razor{
-    position:absolute; left:55.5%; top:-11px;
-    transform:translateX(-50%);
+    position:absolute; left:55.5%; top:-13px;
     font-size:13px; line-height:1;
     color:var(--paper);
     animation: razor-drop 3.2s ease-in-out infinite;
+    will-change: transform, opacity;
   }
   @keyframes razor-drop{
-    0%, 20%{ top:-13px; opacity:0; }
-    28%{ top:14px; opacity:1; }
-    34%{ top:34px; opacity:1; }
-    40%, 100%{ top:46px; opacity:0; }
+    0%, 20%{ transform:translate(-50%, 0); opacity:0; }
+    28%{ transform:translate(-50%, 27px); opacity:1; }
+    34%{ transform:translate(-50%, 47px); opacity:1; }
+    40%, 100%{ transform:translate(-50%, 59px); opacity:0; }
   }
   .premiere-foot{
     display:flex; justify-content:space-between; align-items:center;
@@ -467,6 +469,11 @@
     width:100%; height:100%; border:0; display:block;
     object-fit:cover; background:#0c0c0e;
   }
+  /* Saat native fullscreen (klik ikon expand di kontrol video), tampilkan video
+     apa adanya (contain) supaya tidak ke-crop/zoom — object-fit:cover di atas
+     hanya untuk tampilan kartu kecil, bukan untuk mode fullscreen. */
+  .video-card .frame video:fullscreen{ object-fit:contain; background:#000; }
+  .video-card .frame video:-webkit-full-screen{ object-fit:contain; background:#000; }
   .video-card .frame blockquote{ margin:0; height:100%; }
   .video-card .frame .frame-fallback{
     width:100%; height:100%;
@@ -559,15 +566,13 @@
   .process-item p{ font-size:14.5px; color:rgba(17,17,20,0.65); max-width:520px; line-height:1.6; }
 
   /* ===== HANDLED ACCOUNTS ===== */
-  .handled-grid{ display:flex; flex-direction:column; }
+  .handled-grid{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
   .handled-card{
     display:flex; align-items:center; gap:16px;
     padding:20px 4px;
-    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
     transition: padding-left .2s ease, color .2s ease;
   }
-  .handled-grid .handled-card:first-child{ border-top:none; padding-top:2px; }
-  .handled-grid .handled-card:last-child{ border-bottom:1px solid var(--line); padding-bottom:2px; }
   .handled-card:hover{ padding-left:12px; color:var(--signal); }
   .handled-platform{
     font-family:'Space Mono', monospace; font-size:11px;
@@ -856,7 +861,7 @@
           <span class="section-tag">02 — Karya</span>
           <h2 class="section-title">Video Terbaru</h2>
         </div>
-        <p class="section-desc">Semua video di bawah ini diambil otomatis dari database.</p>
+        <p class="section-desc">Kumpulan karya video TikTok & YouTube terbaru yang saya produksi dan edit.</p>
       </div>
 
       <div class="filter-row">
@@ -963,6 +968,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script>
+(function(){
+  // Hemat CPU: hentikan animasi dekoratif widget "Premiere" saat sudah keluar
+  // dari layar (mis. sedang scroll ke bagian Karya), lanjut lagi saat terlihat.
+  const widget = document.querySelector('.premiere-widget');
+  if (widget && 'IntersectionObserver' in window){
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        widget.classList.toggle('in-view', entry.isIntersecting);
+      });
+    }, { threshold: 0.1 });
+    io.observe(widget);
+  } else if (widget){
+    widget.classList.add('in-view');
+  }
+})();
+
 (function(){
   const burger = document.getElementById('burgerBtn');
   const drawer = document.getElementById('mobileDrawer');
@@ -1112,9 +1133,14 @@
           </div>
         `;
       } else {
+        // Facade: hanya tampilkan thumbnail + tombol play dulu, iframe YouTube
+        // (yang berat) baru dimuat ketika user benar-benar klik play.
         card.innerHTML = `
           <div class="frame">
-            <iframe src="https://www.youtube-nocookie.com/embed/${v.youtube_id}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <button type="button" class="frame-play yt-facade" data-yt-id="${v.youtube_id}" aria-label="Putar video YouTube">
+              <img src="https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg" alt="" loading="lazy">
+              <span class="play-icon">▶</span>
+            </button>
           </div>
           <div class="meta">
             <div class="meta-top">
@@ -1128,6 +1154,24 @@
       grid.appendChild(card);
     });
   }
+
+  // Delegasi klik untuk facade YouTube: iframe berat baru dibuat saat user
+  // benar-benar mau nonton, bukan langsung saat kartu dirender.
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.yt-facade');
+    if (!btn) return;
+    const ytId = btn.dataset.ytId;
+    const frame = btn.closest('.frame');
+    if (!frame || !ytId) return;
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1`;
+    iframe.title = 'YouTube video';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+    frame.innerHTML = '';
+    frame.appendChild(iframe);
+  });
 
   async function loadFromBackend(){
     setState('Memuat karya…', false);
