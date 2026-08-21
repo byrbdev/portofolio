@@ -1112,16 +1112,17 @@
       card.className = 'video-card ' + (v.type === 'tiktok' ? 'tiktok' : 'yt');
 
       if (v.type === 'tiktok'){
-        // Video mp4 asli disetel langsung dari storage kita sendiri (bukan iframe TikTok),
-        // jadi ringan dan tidak butuh cookie pihak ketiga untuk bisa diputar.
+        // Video mp4 asli disetel langsung dari storage kita sendiri (bukan iframe TikTok).
+        // Sama seperti YouTube: tampilkan thumbnail + tombol play dulu (facade),
+        // video asli baru dimuat & diputar setelah user klik play — lebih ringan.
         const videoSrc = publicFileUrl(v.video_path);
         const posterSrc = v.thumbnail_path ? publicFileUrl(v.thumbnail_path) : '';
         card.innerHTML = `
           <div class="frame">
-            <video controls preload="none" playsinline ${posterSrc ? `poster="${posterSrc}"` : ''}>
-              <source src="${videoSrc}" type="video/mp4">
-              Browser kamu tidak mendukung tag video.
-            </video>
+            <button type="button" class="frame-play tiktok-facade" data-video-src="${videoSrc}" ${posterSrc ? `data-poster="${posterSrc}"` : ''} aria-label="Putar video TikTok">
+              ${posterSrc ? `<img src="${posterSrc}" alt="" loading="lazy">` : ''}
+              <span class="play-icon">▶</span>
+            </button>
             ${v.source_url ? `<a class="fallback-chip" href="${v.source_url}" target="_blank" rel="noopener">Lihat di TikTok ↗</a>` : ''}
           </div>
           <div class="meta">
@@ -1154,6 +1155,30 @@
       grid.appendChild(card);
     });
   }
+
+  // Delegasi klik untuk facade TikTok: video mp4 asli baru dimuat & diputar
+  // saat user benar-benar klik play, bukan langsung saat kartu dirender.
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tiktok-facade');
+    if (!btn) return;
+    const videoSrc = btn.dataset.videoSrc;
+    const posterSrc = btn.dataset.poster || '';
+    const frame = btn.closest('.frame');
+    if (!frame || !videoSrc) return;
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    if (posterSrc) video.poster = posterSrc;
+    const source = document.createElement('source');
+    source.src = videoSrc;
+    source.type = 'video/mp4';
+    video.appendChild(source);
+    video.appendChild(document.createTextNode('Browser kamu tidak mendukung tag video.'));
+    frame.insertBefore(video, frame.firstChild);
+    btn.remove();
+    video.play().catch(() => {});
+  });
 
   // Delegasi klik untuk facade YouTube: iframe berat baru dibuat saat user
   // benar-benar mau nonton, bukan langsung saat kartu dirender.
