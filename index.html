@@ -431,9 +431,8 @@
   .filter-btn.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
 
   .video-grid{
-    display:flex;
-    flex-wrap:wrap;
-    gap:24px;
+    column-count: 3;
+    column-gap: 24px;
   }
   .load-more-row{
     display:flex;
@@ -452,8 +451,9 @@
     overflow:hidden;
     background:#000;
     display:flex; flex-direction:column;
-    width:260px;
-    flex:0 0 260px;
+    width:100%;
+    break-inside: avoid;
+    margin-bottom:24px;
   }
   .video-card .frame{
     position:relative;
@@ -461,7 +461,6 @@
     aspect-ratio: 9/16;
     background:#0c0c0e;
   }
-  .video-card.yt{ width:340px; flex:0 0 340px; }
   .video-card.yt .frame{ aspect-ratio:16/9; }
   .video-card .frame iframe,
   .video-card .frame video{
@@ -626,9 +625,8 @@
     .hero-panel{ max-width:420px; }
     .hero-sub{ max-width:100%; }
     .about-grid{ grid-template-columns:1fr; gap:44px; }
-    .video-grid{ gap:18px; }
-    .video-card{ width:220px; flex-basis:220px; }
-    .video-card.yt{ width:300px; flex-basis:300px; }
+    .video-grid{ column-count:2; column-gap:18px; }
+    .video-card{ margin-bottom:18px; }
     .section{ padding:76px 0; }
 
     /* calmer, more compact widget stack */
@@ -681,9 +679,8 @@
     .handled-platform{ font-size:10px; padding:4px 10px; }
     .filter-row{ flex-wrap:wrap; }
 
-    .video-grid{ gap:12px; }
-    .video-card{ width:calc(50% - 6px); flex-basis:calc(50% - 6px); }
-    .video-card.yt{ width:100%; flex-basis:100%; }
+    .video-grid{ column-count:2; column-gap:12px; }
+    .video-card{ margin-bottom:12px; }
     .video-card .meta{ padding:9px 10px; font-size:9.5px; }
 
     .process-item{ grid-template-columns:1fr; gap:8px; padding:20px 0; }
@@ -696,7 +693,7 @@
 
   /* ===== SMALL PHONES (≤400px) ===== */
   @media (max-width:400px){
-    .video-card{ width:100%; flex-basis:100%; }
+    .video-grid{ column-count:1; }
     h1.hero-title{ font-size:clamp(30px, 12vw, 40px); }
   }
 </style>
