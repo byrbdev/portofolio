@@ -202,6 +202,9 @@
     background:none;
     cursor:pointer;
     line-height:1.2;
+    -webkit-text-fill-color:currentColor;
+    -webkit-tap-highlight-color:transparent;
+    opacity:1;
   }
   .btn-primary{ background:var(--ink); color:var(--paper); }
   .btn-primary:hover{ transform:translateY(-2px); background:var(--signal); border-color:var(--signal); }
@@ -455,6 +458,12 @@
     background:transparent;
     cursor:pointer;
     font-family:'Space Mono', monospace;
+    color:var(--ink) !important;
+    -webkit-text-fill-color:var(--ink) !important;
+  }
+  .load-more-row .btn:hover{
+    color:var(--paper) !important;
+    -webkit-text-fill-color:var(--paper) !important;
   }
   .load-more-row.hidden{ display:none; }
   .video-card{
@@ -1097,16 +1106,69 @@
     `;
   }
 
+  function buildCard(v){
+    const card = document.createElement('div');
+    card.className = 'video-card ' + (v.type === 'tiktok' ? 'tiktok' : 'yt');
+
+    if (v.type === 'tiktok'){
+      // Video mp4 asli disetel langsung dari storage kita sendiri (bukan iframe TikTok).
+      // Sama seperti YouTube: tampilkan thumbnail + tombol play dulu (facade),
+      // video asli baru dimuat & diputar setelah user klik play — lebih ringan.
+      const videoSrc = publicFileUrl(v.video_path);
+      const posterSrc = v.thumbnail_path ? publicFileUrl(v.thumbnail_path) : '';
+      card.innerHTML = `
+        <div class="frame">
+          <button type="button" class="frame-play tiktok-facade" data-video-src="${videoSrc}" ${posterSrc ? `data-poster="${posterSrc}"` : ''} aria-label="Putar video TikTok">
+            ${posterSrc ? `<img src="${posterSrc}" alt="" loading="lazy">` : ''}
+            <span class="play-icon">▶</span>
+          </button>
+          ${v.source_url ? `<a class="fallback-chip" href="${v.source_url}" target="_blank" rel="noopener">Lihat di TikTok ↗</a>` : ''}
+        </div>
+        <div class="meta">
+          <div class="meta-top">
+            <span>TIKTOK</span>
+            ${statsMarkup(v)}
+          </div>
+          <span class="tag">VERTICAL</span>
+        </div>
+      `;
+    } else {
+      // Facade: hanya tampilkan thumbnail + tombol play dulu, iframe YouTube
+      // (yang berat) baru dimuat ketika user benar-benar klik play.
+      card.innerHTML = `
+        <div class="frame">
+          <button type="button" class="frame-play yt-facade" data-yt-id="${v.youtube_id}" aria-label="Putar video YouTube">
+            <img src="https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg" alt="" loading="lazy">
+            <span class="play-icon">▶</span>
+          </button>
+        </div>
+        <div class="meta">
+          <div class="meta-top">
+            <span>YOUTUBE</span>
+            ${statsMarkup(v)}
+          </div>
+          <span class="tag">WIDESCREEN</span>
+        </div>
+      `;
+    }
+    return card;
+  }
+
+  let renderedCount = 0; // jumlah kartu yang sudah ada di DOM saat ini
+
   function render(){
-    grid.innerHTML = '';
     const fullList = videos.filter(v => currentFilter === 'all' || v.type === currentFilter);
 
     if (loadFailed){
+      grid.innerHTML = '';
+      renderedCount = 0;
       setState('Gagal memuat karya dari database. Coba muat ulang halaman.', true);
       if (loadMoreRow) loadMoreRow.classList.add('hidden');
       return;
     }
     if (fullList.length === 0){
+      grid.innerHTML = '';
+      renderedCount = 0;
       setState('Belum ada video pada kategori ini.', false);
       if (loadMoreRow) loadMoreRow.classList.add('hidden');
       return;
@@ -1115,57 +1177,22 @@
 
     const list = fullList.slice(0, visibleCount);
 
+    // Kalau daftar diminta lebih pendek dari yang sudah tampil (mis. ganti
+    // filter), rebuild dari nol. Kalau tidak, cukup TAMBAH kartu baru saja
+    // tanpa merusak kartu yang sudah ada (video yang sedang diputar tidak reset).
+    if (visibleCount < renderedCount || currentFilter !== render._lastFilter){
+      grid.innerHTML = '';
+      renderedCount = 0;
+    }
+    render._lastFilter = currentFilter;
+
+    const toAppend = list.slice(renderedCount);
+    toAppend.forEach(v => grid.appendChild(buildCard(v)));
+    renderedCount = list.length;
+
     if (loadMoreRow){
       loadMoreRow.classList.toggle('hidden', visibleCount >= fullList.length);
     }
-
-    list.forEach(v => {
-      const card = document.createElement('div');
-      card.className = 'video-card ' + (v.type === 'tiktok' ? 'tiktok' : 'yt');
-
-      if (v.type === 'tiktok'){
-        // Video mp4 asli disetel langsung dari storage kita sendiri (bukan iframe TikTok).
-        // Sama seperti YouTube: tampilkan thumbnail + tombol play dulu (facade),
-        // video asli baru dimuat & diputar setelah user klik play — lebih ringan.
-        const videoSrc = publicFileUrl(v.video_path);
-        const posterSrc = v.thumbnail_path ? publicFileUrl(v.thumbnail_path) : '';
-        card.innerHTML = `
-          <div class="frame">
-            <button type="button" class="frame-play tiktok-facade" data-video-src="${videoSrc}" ${posterSrc ? `data-poster="${posterSrc}"` : ''} aria-label="Putar video TikTok">
-              ${posterSrc ? `<img src="${posterSrc}" alt="" loading="lazy">` : ''}
-              <span class="play-icon">▶</span>
-            </button>
-            ${v.source_url ? `<a class="fallback-chip" href="${v.source_url}" target="_blank" rel="noopener">Lihat di TikTok ↗</a>` : ''}
-          </div>
-          <div class="meta">
-            <div class="meta-top">
-              <span>TIKTOK</span>
-              ${statsMarkup(v)}
-            </div>
-            <span class="tag">VERTICAL</span>
-          </div>
-        `;
-      } else {
-        // Facade: hanya tampilkan thumbnail + tombol play dulu, iframe YouTube
-        // (yang berat) baru dimuat ketika user benar-benar klik play.
-        card.innerHTML = `
-          <div class="frame">
-            <button type="button" class="frame-play yt-facade" data-yt-id="${v.youtube_id}" aria-label="Putar video YouTube">
-              <img src="https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg" alt="" loading="lazy">
-              <span class="play-icon">▶</span>
-            </button>
-          </div>
-          <div class="meta">
-            <div class="meta-top">
-              <span>YOUTUBE</span>
-              ${statsMarkup(v)}
-            </div>
-            <span class="tag">WIDESCREEN</span>
-          </div>
-        `;
-      }
-      grid.appendChild(card);
-    });
   }
 
   // Delegasi klik untuk facade TikTok: video mp4 asli baru dimuat & diputar
