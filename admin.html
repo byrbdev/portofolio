@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Dashboard Portofolio</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111114;
+    --paper:#F1EEE6;
+    --paper-dim:#E7E2D6;
+    --signal:#4C6BFF;
+    --rec:#FF4438;
+    --ok:#1E8E5A;
+    --line: rgba(17,17,20,0.14);
+    --line-strong: rgba(17,17,20,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit;}
+  .mono{font-family:'Space Mono', monospace;}
+  input:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible{
+    outline:3px solid var(--signal); outline-offset:2px;
+  }
+
+  /* ===== LOGIN ===== */
+  .login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .login-card{
+    width:100%; max-width:380px;
+    background:#fff; border:1.5px solid var(--ink); border-radius:16px;
+    padding:32px 28px;
+  }
+  .login-card h1{
+    font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:20px;
+    letter-spacing:-0.01em; margin-bottom:4px;
+  }
+  .login-card p.sub{ font-family:'Space Mono', monospace; font-size:11px; opacity:0.6; margin-bottom:22px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-family:'Space Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; opacity:0.7; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:11px 12px; border:1.5px solid var(--line-strong); border-radius:9px;
+    font-family:'Inter',sans-serif; font-size:14px; background:var(--paper);
+    color:var(--ink);
+  }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .field-hint{ font-family:'Space Mono', monospace; font-size:9.5px; opacity:0.5; margin-top:5px; }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 20px; border-radius:100px; border:1.5px solid var(--ink);
+    background:var(--ink); color:var(--paper);
+    font-family:'Space Mono', monospace; font-size:12px; font-weight:700; letter-spacing:.03em;
+    cursor:pointer; text-transform:uppercase;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); background:var(--signal); border-color:var(--signal); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+  .btn.btn-ghost{ background:transparent; color:var(--ink); }
+  .btn.btn-ghost:hover{ background:var(--ink); color:var(--paper); }
+  .btn.btn-danger{ background:var(--rec); border-color:var(--rec); }
+  .btn.btn-danger:hover{ background:#c8291f; border-color:#c8291f; }
+  .btn.btn-small{ padding:7px 14px; font-size:10.5px; }
+  .btn-block{ width:100%; }
+  .error-msg{
+    font-family:'Space Mono', monospace; font-size:11.5px; color:var(--rec);
+    margin-top:10px; display:none;
+  }
+  .error-msg.show{ display:block; }
+
+  /* ===== DASHBOARD ===== */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; border-bottom:1.5px solid var(--ink); background:var(--paper);
+    position:sticky; top:0; z-index:10;
+  }
+  .topbar h1{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:16px; }
+  .topbar .who{ font-family:'Space Mono', monospace; font-size:11px; opacity:0.6; }
+  .dash-wrap{ max-width:1040px; margin:0 auto; padding:28px 20px 80px; }
+  .tabs{ display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+  .tab-btn{
+    padding:9px 18px; border-radius:100px; border:1.5px solid var(--line-strong);
+    background:transparent; color:var(--ink);
+    font-family:'Space Mono', monospace; font-size:11.5px; font-weight:700; text-transform:uppercase;
+    cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{
+    background:#fff; border:1.5px solid var(--ink); border-radius:16px;
+    padding:24px; margin-bottom:24px;
+  }
+  .card h2{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:15px; margin-bottom:18px; letter-spacing:-.01em; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media(max-width:640px){ .grid-2, .grid-3{ grid-template-columns:1fr; } }
+
+  .type-toggle{ display:flex; gap:8px; margin-bottom:16px; }
+  .type-toggle button{
+    flex:1; padding:10px; border-radius:9px; border:1.5px solid var(--line-strong);
+    background:transparent; font-family:'Space Mono', monospace; font-size:11.5px; font-weight:700;
+    text-transform:uppercase; cursor:pointer;
+  }
+  .type-toggle button.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .conditional{ display:none; }
+  .conditional.show{ display:block; }
+
+  .status-line{
+    font-family:'Space Mono', monospace; font-size:11.5px; margin-top:14px;
+    padding:10px 12px; border-radius:8px; display:none;
+  }
+  .status-line.show{ display:block; }
+  .status-line.ok{ background:rgba(30,142,90,0.12); color:var(--ok); display:block; }
+  .status-line.err{ background:rgba(255,68,56,0.12); color:var(--rec); display:block; }
+  .status-line.pending{ background:rgba(76,107,255,0.12); color:var(--signal); display:block; }
+
+  /* list rows */
+  .list-row{
+    display:flex; gap:14px; align-items:center;
+    padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .list-row:last-child{ border-bottom:none; }
+  .list-thumb{
+    width:56px; height:78px; border-radius:8px; overflow:hidden; flex-shrink:0;
+    background:#0c0c0e; display:flex; align-items:center; justify-content:center;
+  }
+  .list-thumb.yt{ width:96px; height:54px; }
+  .list-thumb img, .list-thumb video{ width:100%; height:100%; object-fit:cover; }
+  .list-thumb .ph{ color:#666; font-size:9px; font-family:'Space Mono', monospace; text-align:center; padding:4px;}
+  .list-meta{ flex:1; min-width:0; }
+  .list-meta .title{ font-weight:700; font-size:13.5px; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .list-meta .sub{ font-family:'Space Mono', monospace; font-size:10.5px; opacity:0.6; }
+  .list-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .empty-note{ font-family:'Space Mono', monospace; font-size:12px; opacity:0.55; padding:16px 0; }
+  .badge{
+    display:inline-block; padding:2px 9px; border-radius:100px; font-size:9.5px; font-weight:700;
+    font-family:'Space Mono', monospace; text-transform:uppercase; margin-right:6px;
+  }
+  .badge.tiktok{ background:var(--ink); color:var(--paper); }
+  .badge.youtube{ background:var(--rec); color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Admin Login</h1>
+    <p class="sub">Dashboard portofolio — khusus admin</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-block" id="loginBtn">Masuk</button>
+      <p class="error-msg" id="loginError"></p>
+    </form>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+  <div class="topbar">
+    <h1>Dashboard Portofolio</h1>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span class="who" id="whoami"></span>
+      <button class="btn btn-ghost btn-small" id="logoutBtn">Keluar</button>
+    </div>
+  </div>
+
+  <div class="dash-wrap">
+    <div class="tabs">
+      <button class="tab-btn active" data-panel="panelVideos">Video Karya</button>
+      <button class="tab-btn" data-panel="panelHandled">Akun Di-handle</button>
+    </div>
+
+    <!-- ===== PANEL: VIDEOS ===== -->
+    <div class="panel active" id="panelVideos">
+      <div class="card">
+        <h2 id="videoFormTitle">Tambah Video</h2>
+        <form id="videoForm">
+          <input type="hidden" id="videoId">
+          <div class="type-toggle">
+            <button type="button" class="type-btn active" data-type="tiktok">TikTok (upload .mp4)</button>
+            <button type="button" class="type-btn" data-type="youtube">YouTube (link)</button>
+          </div>
+
+          <!-- TikTok fields -->
+          <div class="conditional show" id="tiktokFields">
+            <div class="field">
+              <label for="videoFile">File video (.mp4)</label>
+              <input type="file" id="videoFile" accept="video/mp4,video/*">
+              <p class="field-hint" id="videoFileHint">Wajib untuk video baru. Ukuran default maksimal ±50MB per file di Supabase (bisa diubah di Storage settings).</p>
+            </div>
+            <div class="field">
+              <label for="thumbFile">Thumbnail (opsional, gambar)</label>
+              <input type="file" id="thumbFile" accept="image/*">
+              <p class="field-hint">Kalau tidak diisi, kartu video tampil tanpa gambar sampul (langsung player).</p>
+            </div>
+            <div class="field">
+              <label for="tiktokUrl">Link TikTok asli</label>
+              <input type="url" id="tiktokUrl" placeholder="https://www.tiktok.com/@akun/video/123...">
+            </div>
+          </div>
+
+          <!-- YouTube fields -->
+          <div class="conditional" id="youtubeFields">
+            <div class="field">
+              <label for="youtubeUrl">Link YouTube</label>
+              <input type="url" id="youtubeUrl" placeholder="https://youtu.be/xxxxxxxxxxx atau https://youtube.com/watch?v=...">
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="videoTitle">Judul (opsional)</label>
+              <input type="text" id="videoTitle">
+            </div>
+            <div class="field">
+              <label for="videoViews">Views (opsional)</label>
+              <input type="number" id="videoViews" min="0">
+            </div>
+            <div class="field">
+              <label for="videoLikes">Likes (opsional)</label>
+              <input type="number" id="videoLikes" min="0">
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:4px;">
+            <button type="submit" class="btn" id="videoSubmitBtn">Simpan Video</button>
+            <button type="button" class="btn btn-ghost" id="videoCancelEdit" style="display:none;">Batal Edit</button>
+          </div>
+          <p class="status-line" id="videoFormStatus"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Daftar Video</h2>
+        <div id="videoList"><p class="empty-note">Memuat…</p></div>
+      </div>
+    </div>
+
+    <!-- ===== PANEL: HANDLED ACCOUNTS ===== -->
+    <div class="panel" id="panelHandled">
+      <div class="card">
+        <h2 id="handledFormTitle">Tambah Akun</h2>
+        <form id="handledForm">
+          <input type="hidden" id="handledId">
+          <div class="grid-3">
+            <div class="field">
+              <label for="handledPlatform">Platform</label>
+              <input type="text" id="handledPlatform" placeholder="TikTok / Instagram / dll" required>
+            </div>
+            <div class="field">
+              <label for="handledName">Nama akun</label>
+              <input type="text" id="handledName" placeholder="@namaakun" required>
+            </div>
+            <div class="field">
+              <label for="handledUrl">Link profil</label>
+              <input type="url" id="handledUrl" placeholder="https://..." required>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" class="btn" id="handledSubmitBtn">Simpan Akun</button>
+            <button type="button" class="btn btn-ghost" id="handledCancelEdit" style="display:none;">Batal Edit</button>
+          </div>
+          <p class="status-line" id="handledFormStatus"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Daftar Akun</h2>
+        <div id="handledList"><p class="empty-note">Memuat…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+(function(){
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboard = document.getElementById('dashboard');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+  const loginBtn = document.getElementById('loginBtn');
+  const whoami = document.getElementById('whoami');
+
+  function showError(el, msg){
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function clearError(el){
+    el.textContent = '';
+    el.classList.remove('show');
+  }
+
+  // ===== AUTH =====
+  async function checkSession(){
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session){
+      loginScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      whoami.textContent = session.user.email;
+      initDashboardData();
+    } else {
+      loginScreen.style.display = 'flex';
+      dashboard.style.display = 'none';
+    }
+  }
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError(loginError);
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Memproses…';
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Masuk';
+    if (error){
+      showError(loginError, 'Login gagal: ' + error.message);
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    checkSession();
+  });
+
+  // ===== TABS =====
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel).classList.add('active');
+    });
+  });
+
+  // ===== VIDEO TYPE TOGGLE =====
+  let currentType = 'tiktok';
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentType = btn.dataset.type;
+      document.getElementById('tiktokFields').classList.toggle('show', currentType === 'tiktok');
+      document.getElementById('youtubeFields').classList.toggle('show', currentType === 'youtube');
+    });
+  });
+
+  function parseYouTubeId(url){
+    const patterns = [
+      /youtu\.be\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/
+    ];
+    for (const p of patterns){
+      const m = String(url || '').match(p);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  function uid(){
+    return (crypto.randomUUID ? crypto.randomUUID() : 'v-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  }
+
+  function extOf(filename){
+    const m = /\.([a-zA-Z0-9]+)$/.exec(filename || '');
+    return m ? m[1].toLowerCase() : 'bin';
+  }
+
+  async function uploadFile(file, prefix){
+    const path = `${prefix}/${uid()}.${extOf(file.name)}`;
+    const { error } = await supabaseClient.storage.from(STORAGE_BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+    if (error) throw error;
+    return path;
+  }
+
+  async function deleteFile(path){
+    if (!path) return;
+    try { await supabaseClient.storage.from(STORAGE_BUCKET).remove([path]); }
+    catch (err){ console.warn('Gagal hapus file storage:', err); }
+  }
+
+  // ===== VIDEO FORM (create / edit) =====
+  const videoForm = document.getElementById('videoForm');
+  const videoFormStatus = document.getElementById('videoFormStatus');
+  const videoSubmitBtn = document.getElementById('videoSubmitBtn');
+  const videoCancelEdit = document.getElementById('videoCancelEdit');
+  const videoFormTitle = document.getElementById('videoFormTitle');
+
+  function setVideoStatus(msg, kind){
+    videoFormStatus.textContent = msg;
+    videoFormStatus.className = 'status-line' + (kind ? ' ' + kind : '');
+  }
+
+  function resetVideoForm(){
+    document.getElementById('videoId').value = '';
+    videoForm.reset();
+    currentType = 'tiktok';
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === 'tiktok'));
+    document.getElementById('tiktokFields').classList.add('show');
+    document.getElementById('youtubeFields').classList.remove('show');
+    videoFormTitle.textContent = 'Tambah Video';
+    videoSubmitBtn.textContent = 'Simpan Video';
+    videoCancelEdit.style.display = 'none';
+    document.getElementById('videoFileHint').textContent = 'Wajib untuk video baru. Ukuran default maksimal ±50MB per file di Supabase (bisa diubah di Storage settings).';
+    setVideoStatus('', '');
+  }
+
+  videoCancelEdit.addEventListener('click', resetVideoForm);
+
+  let editingVideoOld = null; // { video_path, thumbnail_path } for cleanup on replace
+
+  function fillVideoFormForEdit(v){
+    document.getElementById('videoId').value = v.id;
+    currentType = v.type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === v.type));
+    document.getElementById('tiktokFields').classList.toggle('show', v.type === 'tiktok');
+    document.getElementById('youtubeFields').classList.toggle('show', v.type === 'youtube');
+    document.getElementById('tiktokUrl').value = v.type === 'tiktok' ? (v.source_url || '') : '';
+    document.getElementById('youtubeUrl').value = v.type === 'youtube' ? (v.source_url || '') : '';
+    document.getElementById('videoTitle').value = v.title || '';
+    document.getElementById('videoViews').value = v.views ?? '';
+    document.getElementById('videoLikes').value = v.likes ?? '';
+    document.getElementById('videoFileHint').textContent = 'Kosongkan kalau tidak mau ganti file video yang sudah ada.';
+    videoFormTitle.textContent = 'Edit Video';
+    videoSubmitBtn.textContent = 'Update Video';
+    videoCancelEdit.style.display = 'inline-flex';
+    editingVideoOld = { video_path: v.video_path, thumbnail_path: v.thumbnail_path };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  videoForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const editId = document.getElementById('videoId').value || null;
+    videoSubmitBtn.disabled = true;
+    setVideoStatus('Menyimpan…', 'pending');
+
+    try {
+      const title = document.getElementById('videoTitle').value.trim() || null;
+      const views = document.getElementById('videoViews').value ? Number(document.getElementById('videoViews').value) : null;
+      const likes = document.getElementById('videoLikes').value ? Number(document.getElementById('videoLikes').value) : null;
+
+      let payload = { type: currentType, title, views, likes };
+
+      if (currentType === 'tiktok'){
+        const tiktokUrl = document.getElementById('tiktokUrl').value.trim();
+        if (!tiktokUrl){ throw new Error('Link TikTok wajib diisi.'); }
+        payload.source_url = tiktokUrl;
+        payload.youtube_id = null;
+
+        const fileInput = document.getElementById('videoFile');
+        const thumbInput = document.getElementById('thumbFile');
+
+        if (fileInput.files[0]){
+          setVideoStatus('Mengupload file video…', 'pending');
+          const newPath = await uploadFile(fileInput.files[0], 'tiktok');
+          payload.video_path = newPath;
+          if (editId && editingVideoOld && editingVideoOld.video_path){
+            await deleteFile(editingVideoOld.video_path);
+          }
+        } else if (!editId){
+          throw new Error('File video .mp4 wajib diupload untuk video baru.');
+        }
+
+        if (thumbInput.files[0]){
+          setVideoStatus('Mengupload thumbnail…', 'pending');
+          const newThumb = await uploadFile(thumbInput.files[0], 'thumbnails');
+          payload.thumbnail_path = newThumb;
+          if (editId && editingVideoOld && editingVideoOld.thumbnail_path){
+            await deleteFile(editingVideoOld.thumbnail_path);
+          }
+        }
+      } else {
+        const ytUrl = document.getElementById('youtubeUrl').value.trim();
+        const ytId = parseYouTubeId(ytUrl);
+        if (!ytUrl || !ytId){ throw new Error('Link YouTube tidak valid.'); }
+        payload.source_url = ytUrl;
+        payload.youtube_id = ytId;
+        payload.video_path = null;
+        payload.thumbnail_path = null;
+      }
+
+      setVideoStatus('Menyimpan ke database…', 'pending');
+      if (editId){
+        const { error } = await supabaseClient.from('videos').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseClient.from('videos').insert(payload);
+        if (error) throw error;
+      }
+
+      setVideoStatus('Tersimpan ✓', 'ok');
+      resetVideoForm();
+      loadVideos();
+    } catch (err){
+      console.error(err);
+      setVideoStatus('Gagal: ' + err.message, 'err');
+    } finally {
+      videoSubmitBtn.disabled = false;
+    }
+  });
+
+  // ===== VIDEO LIST =====
+  const videoListEl = document.getElementById('videoList');
+
+  async function loadVideos(){
+    videoListEl.innerHTML = '<p class="empty-note">Memuat…</p>';
+    const { data, error } = await supabaseClient
+      .from('videos')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error){
+      videoListEl.innerHTML = `<p class="empty-note">Gagal memuat: ${error.message}</p>`;
+      return;
+    }
+    if (!data || data.length === 0){
+      videoListEl.innerHTML = '<p class="empty-note">Belum ada video.</p>';
+      return;
+    }
+
+    videoListEl.innerHTML = '';
+    data.forEach(v => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+
+      let thumbHtml;
+      if (v.type === 'tiktok'){
+        thumbHtml = v.thumbnail_path
+          ? `<div class="list-thumb"><img src="${publicFileUrl(v.thumbnail_path)}" alt=""></div>`
+          : `<div class="list-thumb"><span class="ph">MP4</span></div>`;
+      } else {
+        thumbHtml = `<div class="list-thumb yt"><img src="https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg" alt=""></div>`;
+      }
+
+      row.innerHTML = `
+        ${thumbHtml}
+        <div class="list-meta">
+          <div class="title">
+            <span class="badge ${v.type}">${v.type}</span>
+            ${v.title ? v.title : '(tanpa judul)'}
+          </div>
+          <div class="sub">${v.views ? '👁 ' + v.views : ''} ${v.likes ? '❤ ' + v.likes : ''} · <a href="${v.source_url}" target="_blank" rel="noopener" style="text-decoration:underline;">buka sumber ↗</a></div>
+        </div>
+        <div class="list-actions">
+          <button class="btn btn-ghost btn-small" data-action="edit">Edit</button>
+          <button class="btn btn-danger btn-small" data-action="delete">Hapus</button>
+        </div>
+      `;
+      row.querySelector('[data-action="edit"]').addEventListener('click', () => fillVideoFormForEdit(v));
+      row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteVideo(v));
+      videoListEl.appendChild(row);
+    });
+  }
+
+  async function deleteVideo(v){
+    if (!confirm(`Hapus video "${v.title || v.type}"? File yang sudah diupload juga akan dihapus.`)) return;
+    try {
+      const { error } = await supabaseClient.from('videos').delete().eq('id', v.id);
+      if (error) throw error;
+      await deleteFile(v.video_path);
+      await deleteFile(v.thumbnail_path);
+      loadVideos();
+    } catch (err){
+      alert('Gagal menghapus: ' + err.message);
+    }
+  }
+
+  // ===== HANDLED ACCOUNTS FORM =====
+  const handledForm = document.getElementById('handledForm');
+  const handledFormStatus = document.getElementById('handledFormStatus');
+  const handledSubmitBtn = document.getElementById('handledSubmitBtn');
+  const handledCancelEdit = document.getElementById('handledCancelEdit');
+  const handledFormTitle = document.getElementById('handledFormTitle');
+
+  function setHandledStatus(msg, kind){
+    handledFormStatus.textContent = msg;
+    handledFormStatus.className = 'status-line' + (kind ? ' ' + kind : '');
+  }
+
+  function resetHandledForm(){
+    document.getElementById('handledId').value = '';
+    handledForm.reset();
+    handledFormTitle.textContent = 'Tambah Akun';
+    handledSubmitBtn.textContent = 'Simpan Akun';
+    handledCancelEdit.style.display = 'none';
+    setHandledStatus('', '');
+  }
+  handledCancelEdit.addEventListener('click', resetHandledForm);
+
+  function fillHandledFormForEdit(h){
+    document.getElementById('handledId').value = h.id;
+    document.getElementById('handledPlatform').value = h.platform || '';
+    document.getElementById('handledName').value = h.name || '';
+    document.getElementById('handledUrl').value = h.url || '';
+    handledFormTitle.textContent = 'Edit Akun';
+    handledSubmitBtn.textContent = 'Update Akun';
+    handledCancelEdit.style.display = 'inline-flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  handledForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const editId = document.getElementById('handledId').value || null;
+    handledSubmitBtn.disabled = true;
+    setHandledStatus('Menyimpan…', 'pending');
+    try {
+      const payload = {
+        platform: document.getElementById('handledPlatform').value.trim(),
+        name: document.getElementById('handledName').value.trim(),
+        url: document.getElementById('handledUrl').value.trim()
+      };
+      if (editId){
+        const { error } = await supabaseClient.from('handled_accounts').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseClient.from('handled_accounts').insert(payload);
+        if (error) throw error;
+      }
+      setHandledStatus('Tersimpan ✓', 'ok');
+      resetHandledForm();
+      loadHandled();
+    } catch (err){
+      setHandledStatus('Gagal: ' + err.message, 'err');
+    } finally {
+      handledSubmitBtn.disabled = false;
+    }
+  });
+
+  const handledListEl = document.getElementById('handledList');
+
+  async function loadHandled(){
+    handledListEl.innerHTML = '<p class="empty-note">Memuat…</p>';
+    const { data, error } = await supabaseClient
+      .from('handled_accounts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error){
+      handledListEl.innerHTML = `<p class="empty-note">Gagal memuat: ${error.message}</p>`;
+      return;
+    }
+    if (!data || data.length === 0){
+      handledListEl.innerHTML = '<p class="empty-note">Belum ada akun.</p>';
+      return;
+    }
+
+    handledListEl.innerHTML = '';
+    data.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `
+        <div class="list-meta">
+          <div class="title">${h.platform} — ${h.name}</div>
+          <div class="sub"><a href="${h.url}" target="_blank" rel="noopener" style="text-decoration:underline;">${h.url}</a></div>
+        </div>
+        <div class="list-actions">
+          <button class="btn btn-ghost btn-small" data-action="edit">Edit</button>
+          <button class="btn btn-danger btn-small" data-action="delete">Hapus</button>
+        </div>
+      `;
+      row.querySelector('[data-action="edit"]').addEventListener('click', () => fillHandledFormForEdit(h));
+      row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteHandled(h));
+      handledListEl.appendChild(row);
+    });
+  }
+
+  async function deleteHandled(h){
+    if (!confirm(`Hapus akun "${h.name}"?`)) return;
+    try {
+      const { error } = await supabaseClient.from('handled_accounts').delete().eq('id', h.id);
+      if (error) throw error;
+      loadHandled();
+    } catch (err){
+      alert('Gagal menghapus: ' + err.message);
+    }
+  }
+
+  function initDashboardData(){
+    loadVideos();
+    loadHandled();
+  }
+
+  supabaseClient.auth.onAuthStateChange(() => checkSession());
+  checkSession();
+})();
+</script>
+</body>
+</html>
