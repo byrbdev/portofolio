@@ -455,15 +455,22 @@
     margin-top:32px;
   }
   .load-more-row .btn{
-    background:transparent;
+    background:transparent !important;
     cursor:pointer;
     font-family:'Space Mono', monospace;
     color:var(--ink) !important;
     -webkit-text-fill-color:var(--ink) !important;
   }
-  .load-more-row .btn:hover{
-    color:var(--paper) !important;
-    -webkit-text-fill-color:var(--paper) !important;
+  /* Hover HANYA untuk perangkat yang benar memiliki mouse (desktop).
+     Di layar sentuh (mobile/tablet), :hover bisa "nyangkut" setelah tap dan
+     bikin teks kelihatan hilang — jadi efek hover sengaja tidak diaktifkan di sana. */
+  @media (hover:hover) and (pointer:fine){
+    .load-more-row .btn:hover{
+      background:var(--ink) !important;
+      color:var(--paper) !important;
+      -webkit-text-fill-color:var(--paper) !important;
+      transform:translateY(-2px);
+    }
   }
   .load-more-row.hidden{ display:none; }
   .video-card{
